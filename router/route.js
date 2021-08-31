@@ -1,40 +1,60 @@
+require("../connection/mongose");
 const express = require("express");
-const { ObjectId } = require("mongodb");
 const router = express.Router();
-const database = require("../connection/db.js");
+const User = require("../models/Users");
 
 router.get("/", (req, res) => {
-  res.send({
-    status: true,
-  });
+  res.sendStatus(200);
 });
 
 router.get("/users", async (req, res) => {
   try {
-    const db = database.db("db_latihan");
-    const user = await db.collection("users").find().toArray();
+    const user = await User.find();
     res.send({ data: user });
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+router.get("/users/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findOne({ _id: id });
+    if (user) {
+      res.send({ data: user });
+    } else {
+      res.send({ message: "data not found" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+router.delete("/users/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.deleteOne({ _id: id });
+    if (user) {
+      res.send({ message: "success delete data" });
+    } else {
+      res.send({ message: "data not found" });
+    }
+  } catch (error) {
+    console.log(error);
   }
 });
 
 router.post("/users", async (req, res) => {
   try {
     const { name, age, status } = req.body;
-    const db = database.db("db_latihan");
-    const user = await db.collection("users").insertOne({
-      name,
-      age,
-      status,
-    });
-    if (user.acknowledged) {
-      res.send({ message: "success add data" });
+    const user = await User.create({ name, age, status });
+    if (user) {
+      res.send({ message: "success add data user", data: user });
     } else {
       res.send({ message: "failed add data" });
     }
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
   }
 });
 
@@ -42,39 +62,18 @@ router.put("/users/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { name, age, status } = req.body;
-    const db = database.db("db_latihan");
-    const user = await db.collection("users").updateOne(
-      { _id: ObjectId(id) },
-      {
-        $set: {
-          name,
-          age,
-          status,
-        },
-      }
+    const user = await User.updateOne(
+      { _id: id },
+      { name, age, status },
+      { runValidators: true }
     );
-    if (user.acknowledged) {
+    if (user) {
       res.send({ message: `success update ${id}` });
     } else {
       res.send({ message: "failed update data" });
     }
-  } catch (err) {
-    console.log(err);
-  }
-});
-
-router.delete("/users/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const db = database.db("db_latihan");
-    const user = await db.collection("users").deleteOne({ _id: ObjectId(id) });
-    if (user.acknowledged) {
-      res.send({ message: `success delete ${id}` });
-    } else {
-      res.send({ message: "failed delete data" });
-    }
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
   }
 });
 
